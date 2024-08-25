@@ -3,9 +3,6 @@
 // 由 VideoClient.rc 使用
 //
 #define IDR_MAINFRAME					128
-#define IDM_ABOUTBOX					0x0010
-#define IDD_ABOUTBOX					100
-#define IDS_ABOUTBOX					101
 #define IDD_VIDEOCLIENT_DIALOG				102
 
 // 新对象的下一组默认值

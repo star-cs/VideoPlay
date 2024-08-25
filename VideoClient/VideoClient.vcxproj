@@ -20,7 +20,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
-    <ProjectGuid>{85837DE7-E9F4-48C2-B1D0-B043FAAE5D6C}</ProjectGuid>
+    <ProjectGuid>{1AD5A50A-7B5A-493E-99A7-143C9446C3BC}</ProjectGuid>
     <Keyword>MFCProj</Keyword>
     <RootNamespace>VideoClient</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
@@ -204,7 +204,9 @@
     <ResourceCompile Include="VideoClient.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="README.md" />
     <None Include="res\VideoClient.rc2" />
+    <None Include="VideoClient.mdj" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="res\VideoClient.ico" />
