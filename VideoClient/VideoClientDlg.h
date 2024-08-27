@@ -4,6 +4,7 @@
 
 #pragma once
 
+class VideoClientController;
 
 // CVideoClientDlg 对话框
 class CVideoClientDlg : public CDialogEx
@@ -33,17 +34,25 @@ protected:
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
 public:
-	CButton m_BtnPlay;
-	CButton m_BtnStop;
-	CStatic m_MediaPos;
-	CStatic m_MediaVolume;
-	CEdit m_MediaUrl;
 	afx_msg void OnBnClickedBtnPlay();
 	afx_msg void OnBnClickedBtnStop();
 	afx_msg void OnTimer(UINT_PTR nIDEvent);
 	afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
 	afx_msg void OnHScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
-	CSliderCtrl m_SliderMeidaPos;
+	
+
+public:
+	CButton m_BtnPlay;
+	CButton m_BtnStop;
+	CStatic m_MediaPos;
+	CStatic m_MediaVolume;
+	CEdit m_MediaUrl;
+	CSliderCtrl m_SliderMediaPos;
 	CSliderCtrl m_SliderVolume;
+
+	VideoClientController* m_controller;
+
+	CEdit m_veido;
+	float m_media_length;
 	afx_msg void OnNMCustomdrawSliderVolume(NMHDR* pNMHDR, LRESULT* pResult);
 };

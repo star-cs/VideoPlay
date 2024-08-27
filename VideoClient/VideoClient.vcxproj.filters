@@ -36,6 +36,12 @@
     <ClInclude Include="MVlc.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="VideoClientController.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="CTool.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="VideoClient.cpp">
@@ -48,6 +54,12 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="MVlc.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="VideoClientController.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="CTool.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
