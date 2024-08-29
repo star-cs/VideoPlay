@@ -6,6 +6,7 @@
 #include <Windows.h>
 #include <varargs.h>
 
+
 void MTrace(const char* format, ...) {
 	va_list ap;
 	va_start(ap, format);	// 初始化可变参数列表 ap，告诉编译器从 format 之后的位置开始读取可变参数。
@@ -145,9 +146,7 @@ private:
 				// worker() 返回为0，会一直处理这个任务函数。
 				int ret = worker();
 				if (ret != 0) {
-					CString str;
-					str.Format(_T("thread found warning code %d \r\n"), ret);
-					OutputDebugString(str); 
+					TRACE("thread found warning code %d \r\n", ret);
 				}
 				if (ret < 0) {
 					UpdateWorker();
