@@ -44,7 +44,7 @@ int VideoClientController::SetMedia(const std::string& strUrl)
 	return m_vlc.SetMedia(strUrl);
 }
 
-float VideoClientController::ViedoCtrl(MVlcCommand cmd)
+float VideoClientController::VideoCtrl(MVlcCommand cmd)
 {
 	/*
 	MVLC_PLAY,

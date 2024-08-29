@@ -132,12 +132,12 @@ void CVideoClientDlg::OnBnClickedBtnPlay()
 
 		m_BtnPlay.SetWindowTextW(_T("暂停"));
 		m_BtnPlayStatus = true;
-		m_controller->ViedoCtrl(MVLC_PLAY);
+		m_controller->VideoCtrl(MVLC_PLAY);
 	}
 	else {
 		m_BtnPlay.SetWindowTextW(_T("播放"));
 		m_BtnPlayStatus = false;
-		m_controller->ViedoCtrl(MVLC_PAUSE);
+		m_controller->VideoCtrl(MVLC_PAUSE);
 	}
 }
 
@@ -147,7 +147,7 @@ void CVideoClientDlg::OnBnClickedBtnStop()
 	// TODO: 在此添加控件通知处理程序代码
 	m_BtnPlay.SetWindowTextW(_T("播放"));
 	m_BtnPlayStatus = false;
-	m_controller->ViedoCtrl(MVLC_STOP);
+	m_controller->VideoCtrl(MVLC_STOP);
 }
 
 
@@ -155,12 +155,12 @@ void CVideoClientDlg::OnTimer(UINT_PTR nIDEvent)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
 	if (nIDEvent == 0) {
-		float pos = m_controller->ViedoCtrl(MVLC_GET_POSITION);	
+		float pos = m_controller->VideoCtrl(MVLC_GET_POSITION);	
 
 		if (pos != -1.0f) {
 
 			if (m_SliderMediaPos.GetRangeMax() <= 1) {
-				m_media_length = m_controller->ViedoCtrl(MVLC_GET_LENGTH);
+				m_media_length = m_controller->VideoCtrl(MVLC_GET_LENGTH);
 				m_SliderMediaPos.SetRange(0, m_media_length);
 				m_SliderMediaPos.SetTicFreq(20);
 			}
