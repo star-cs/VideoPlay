@@ -21,6 +21,9 @@
     <ClCompile Include="RTSPServer.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="CTool.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Socket.h">
@@ -35,5 +38,11 @@
     <ClInclude Include="MyQueue.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="CTool.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" />
   </ItemGroup>
 </Project>

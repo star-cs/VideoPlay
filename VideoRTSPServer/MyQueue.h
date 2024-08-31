@@ -197,7 +197,7 @@ protected:
 			break;
 
 		default:
-			OutputDebugString("unlnown operator! \r\n");
+			TRACE("unlnown operator! \r\n");
 			break;
 		}
 	}
@@ -298,7 +298,7 @@ protected:
 			break;
 
 		default:
-			OutputDebugString("unlnown operator! \r\n");
+			TRACE("unlnown operator! \r\n");
 			break;
 		}
 	}

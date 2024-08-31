@@ -3,6 +3,9 @@
 #include <memory>
 #include <string>
 
+#pragma warning(disable:6031)
+#pragma comment(lib, "ws2_32.lib")	// 网络
+
 enum MTYPE {
 	MTCP,
 	MUDP,
@@ -46,6 +49,48 @@ public:
 	void Updata(void* buffer, size_t size) {
 		resize(size);
 		memcpy((void*)c_str(), buffer, size);
+	}
+
+	void Zero() {
+		memset((void*)c_str(), 0, size());
+	}
+
+	MBuffer& operator<<(const MBuffer& str) {
+		if (this != str) {
+			*this += str;
+		}
+		else {
+			MBuffer tmp = str;
+			*this += tmp;
+		}
+		return *this;
+	}
+
+	MBuffer& operator<<(const std::string& str) {
+		*this += str;
+		return *this;
+	}
+
+	MBuffer& operator<<(const char* str) {
+		*this += str;
+		return *this;
+	}
+
+	MBuffer& operator<<(int data) {
+		char s[16] = "";
+		snprintf(s, sizeof(s), "%d", data);
+		*this += s;
+		return *this;
+	}
+
+	const MBuffer& operator>>(int& data) const {
+		data = atoi(c_str());
+		return *this;
+	}
+
+	const MBuffer& operator>>(short& data) const{
+		data = (short)atoi(c_str());
+		return *this;
 	}
 };
 
@@ -178,8 +223,17 @@ public:
 		return ::listen(*m_socket, backlog);
 	}
 
-	MSocket Accept(MAddress& addr) {
+	MSocket Accept(MAddress& addr) {		// 存在 socket先关闭，但处理Accept的线程还没关闭。 把Stop() 关闭顺序 改一下就行
 		int len = sizeof(addr);
+		if (m_socket == nullptr) {
+			return MSocket(INVALID_SOCKET, m_type);
+		}
+
+		SOCKET server = *m_socket;
+		if (server == INVALID_SOCKET) {
+			return MSocket(INVALID_SOCKET, m_type);
+		}
+
 		SOCKET sock = ::accept(*m_socket, addr, &len);
 		return MSocket(sock, m_type);		// 返回得到的套接字，和m_socket是同类的
 	}
@@ -189,12 +243,20 @@ public:
 	}
 
 	int Recv(MBuffer& buffer) {
-		return ::recv(*m_socket, buffer, buffer.size(), 0);
+		return ::recv(*m_socket, buffer, buffer.size(), 0); 
 	}
 
 	int Send(const MBuffer& buffer) {
-		// TODO：待优化buffer较长的情况。
-		return ::send(*m_socket, buffer, buffer.size(), 0);
+		printf("send:%s\r\n", (char*)buffer);
+		int index = 0;
+		char* pDat = buffer;
+		while (index < (int)buffer.size()) {
+			int ret = ::send(*m_socket, pDat + index, buffer.size() - index, 0);
+			if (ret < 0) return ret;
+			if (ret == 0) break;
+			index += ret;
+		}
+		return index;
 	}
 
 private:     

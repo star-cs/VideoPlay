@@ -4,22 +4,10 @@
 #include <mutex>
 #include <atomic>
 #include <Windows.h>
-#include <varargs.h>
-
-
-void MTrace(const char* format, ...) {
-	va_list ap;
-	va_start(ap, format);	// 初始化可变参数列表 ap，告诉编译器从 format 之后的位置开始读取可变参数。
-	std::string sBuffer;
-	sBuffer.resize(10240);
-	vsprintf((char*)sBuffer.c_str(), format, ap);	// 使用 vsprintf 函数将格式化的字符串写入 sBuffer。
-										// 这里将 sBuffer.c_str() 强制转换为 char* 类型，以便 vsprintf 可以正确地处理它。
-	OutputDebugStringA(sBuffer.c_str());
-	va_end(ap);
-}
+#include "CTool.h"
 
 #ifndef TRACE
-#define TRACE MTrace
+#define TRACE CTool::MTrace
 #endif
 
 

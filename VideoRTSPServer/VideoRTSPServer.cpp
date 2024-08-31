@@ -9,6 +9,7 @@ int main()
     RTSPServer server;
     server.Init();
     server.Invoke();
+    printf("Hello World!\n");
     getchar();
     server.Stop();
     return 0;
