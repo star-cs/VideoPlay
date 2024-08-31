@@ -24,6 +24,9 @@
     <ClCompile Include="CTool.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="MediaFile.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Socket.h">
@@ -39,6 +42,12 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="CTool.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="MediaFile.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Base.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

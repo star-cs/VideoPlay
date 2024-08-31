@@ -128,11 +128,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="CTool.cpp" />
+    <ClCompile Include="MediaFile.cpp" />
     <ClCompile Include="RTSPServer.cpp" />
     <ClCompile Include="VideoRTSPServer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Base.h" />
     <ClInclude Include="CTool.h" />
+    <ClInclude Include="MediaFile.h" />
     <ClInclude Include="MyQueue.h" />
     <ClInclude Include="MyThread.h" />
     <ClInclude Include="RTSPServer.h" />
