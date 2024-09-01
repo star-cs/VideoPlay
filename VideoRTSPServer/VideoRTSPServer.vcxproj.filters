@@ -27,6 +27,9 @@
     <ClCompile Include="MediaFile.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="RTPHelper.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Socket.h">
@@ -48,6 +51,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="Base.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="RTPHelper.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

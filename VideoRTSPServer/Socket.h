@@ -51,6 +51,13 @@ private:
 class MAddress
 {
 public:
+	MAddress(const std::string& ip, short port) {
+		m_ip = ip;
+		m_port = port;
+		m_addr.sin_port = htons(port);
+		m_addr.sin_addr.s_addr = inet_addr(m_ip.c_str());
+	}
+
 	MAddress() {
 		m_port = -1;
 		memset(&m_addr, 0, sizeof(m_addr));
@@ -81,6 +88,11 @@ public:
 		m_addr.sin_addr.s_addr = inet_addr(m_ip.c_str());
 	}
 
+	void SetPort(short port) {
+		m_port = port;
+		m_addr.sin_port = htons(m_port);
+	}
+
 	operator const sockaddr* () const{
 		return (sockaddr*)&m_addr;
 	}
@@ -88,7 +100,6 @@ public:
 	operator sockaddr* () {
 		return (sockaddr*)&m_addr;
 	}
-
 
 	operator sockaddr_in* () {
 		return &m_addr;
@@ -121,6 +132,10 @@ public:
 	~MSocket() { m_socket.reset(); }
 
 	operator SOCKET() {
+		return *m_socket;
+	}
+
+	operator SOCKET() const{
 		return *m_socket;
 	}
 

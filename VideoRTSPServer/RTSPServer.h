@@ -3,8 +3,10 @@
 #include "Socket.h"
 #include "MyThread.h"
 #include "MyQueue.h"
+#include "RTPHelper.h"
 #include <string>
 #include <map>
+#include "MediaFile.h"
 
 
 class RTSPRequest
@@ -61,6 +63,10 @@ private:
 	MBuffer m_options;	
 };
 
+class RTSPSession;
+class RTSPServer;
+typedef void(*RTSPPLAYCB)(RTSPServer* thiz, RTSPSession& session);
+
 class RTSPSession 
 {
 public:
@@ -71,7 +77,9 @@ public:
 	
 	MBuffer PinkOneLine(MBuffer& buffer);
 
-	int PickRequestAndReply();
+	int PickRequestAndReply(RTSPPLAYCB cb, RTSPServer* thiz);
+
+	MAddress GetClientUDPAddress() const;
 
 	~RTSPSession() {}
 
@@ -83,8 +91,9 @@ private:
 private:
 	MBuffer m_id;
 	MSocket m_client;
-
+	short m_port;		//客户端UDP端口设置。
 };
+
 
 class RTSPServer :public ThreadFuncBase
 {
@@ -93,6 +102,7 @@ public:
 		:m_socket(MTYPE::MTCP), m_status(0), m_threadPool(10)
 	{
 		m_threadMain.UpdateWorker(ThreadWorker(this, (FUNCTYPE)&RTSPServer::ThreadRTSPWorker));
+		m_h264.Open("./test.mp4");
 	}
 
 	int Init(const std::string& strIP = "0.0.0.0", short port = 554);
@@ -106,6 +116,9 @@ protected:
 	int ThreadRTSPWorker();
 	int ThreadSession();
 	
+	static void PlayCallBack(RTSPServer* thiz, RTSPSession& session);
+
+	int UdpWorker(const MAddress& client);
 
 private:
 	static SocketInit m_init;
@@ -121,5 +134,7 @@ private:
 	// std::map<std::string, RTSPSession> m_mapSessions;
 	CMyQueue<RTSPSession> m_lstSession;
 
+	RTPHelper m_hleper;
+	MediaFile m_h264;
 };
 

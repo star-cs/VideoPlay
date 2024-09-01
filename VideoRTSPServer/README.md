@@ -11,6 +11,14 @@
 
     m_id.resize(8);
     snprintf((char*)m_id.c_str(), m_id.size(), "%08d", uuid.Data1);
+
+
+int RTPHelper::GetFrameSepSize(MBuffer& frame)
+{
+    BYTE buf[] = { 0,0,0,1 };
+    if (memcmp(frame, buf, 4) == 0) return 4;
+    return 3;
+}
 ```
 
 # 宏重定义
@@ -38,3 +46,27 @@ include <rpc.h>
 # 调试
 socket返回-1，参数没问题。有可能是 WSAStartup() 没有调用。
 
+
+# 位域
+```c++
+    unsigned short cc : 4;
+	unsigned short extension : 1;
+	unsigned short padding : 1;
+	unsigned short version : 2;	// 位域
+```
+高位和低位的位置：  
+DataSheet中，默认左边是高位，低位在右边  
+位域中先声明的，是低位的，后声明的是高位。以字节为单位。  
+所以每个字节的变量声明需要倒置。  
+
+
+# 通过socket获取远端IP
+```c++
+MAddress RTSPSession::GetClientUDPAddress() const
+{
+    MAddress addr;
+    int len = 0;
+    getsockname(m_client, addr, &len);  //获取客户端地址
+    return addr;
+}
+```

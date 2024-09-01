@@ -1,6 +1,10 @@
 #pragma once
 #include <string>
 
+#ifndef BYTE
+	typedef unsigned char BYTE;
+#endif
+
 class MBuffer : public std::string
 {
 public:

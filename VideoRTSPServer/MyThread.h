@@ -14,12 +14,20 @@
 class ThreadFuncBase {};
 
 typedef int(ThreadFuncBase::* FUNCTYPE)();
+typedef int(ThreadFuncBase::* FUNCTYPE_ARG)(void*);
+
 
 class ThreadWorker {
 public:
-	ThreadWorker() :thiz(NULL), func(NULL) {}
+	ThreadWorker() :thiz(NULL), func(NULL),func_arg(NULL), m_arg(NULL), hasArg(false){}
 	//ThreadWorker(ThreadFuncBase* obj, FUNCTYPE f) :thiz(obj), func(f) {}
-	ThreadWorker(void* obj, FUNCTYPE f) :thiz((ThreadFuncBase*)obj), func(f) {}
+	ThreadWorker(void* obj, FUNCTYPE f) :thiz((ThreadFuncBase*)obj), func(f) {
+		hasArg = false;
+	}
+
+	ThreadWorker(void* obj, FUNCTYPE_ARG f, void* arg) :thiz((ThreadFuncBase*)obj), func_arg(f), m_arg(arg){
+		hasArg = true;
+	}
 
 	ThreadWorker(const ThreadWorker& worker) {
 		thiz = worker.thiz;
@@ -35,19 +43,34 @@ public:
 	}
 
 	bool IsVaild() const{
-		return (thiz != NULL) && (func != NULL);
+		if (hasArg)
+		{
+			return (func_arg != NULL) && (m_arg != NULL) && (thiz != NULL);
+		}
+		else {
+			return (thiz != NULL) && (func != NULL);
+		}
 	}
 
 	int operator()() {
 		if (IsVaild()) {
-			return (thiz->*func)();
+			if (hasArg)
+			{
+				return (thiz->*func_arg)(m_arg);
+			}
+			else {
+				return (thiz->*func)();
+			}
 		}
 		return -1;
 	}
 
 public:
+	bool hasArg;
 	ThreadFuncBase* thiz;
 	FUNCTYPE func;
+	FUNCTYPE_ARG func_arg;
+	void* m_arg;
 };
 
 
@@ -121,6 +144,8 @@ private:
 		_endthread();
 	}
 
+	// 小于0，结束工作
+	// 大于等于0，重复执行
 	void ThreadWorker() {
 		while (m_bStatus) {
 

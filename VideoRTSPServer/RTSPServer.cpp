@@ -38,7 +38,7 @@ int RTSPServer::ThreadRTSPWorker()
     MAddress addr;
     MSocket client = m_socket.Accept(addr);
     if (client != INVALID_SOCKET) {
-        RTSPSession session(client);
+        RTSPSession session(client);    //这里的client是TCP连接到的，IP是客户端的IP。Port不满足UDP端口设置。
         m_lstSession.PushBack(session);
         m_threadPool.DispatchWorker(ThreadWorker(this, (FUNCTYPE)&RTSPServer::ThreadSession));
     }
@@ -49,8 +49,31 @@ int RTSPServer::ThreadSession()
 {
     RTSPSession session;        // 局部变量，函数结束后，自动析构。连接断开，client关闭。解决方法：PickRequestAndReply while循环处理
     if (m_lstSession.PopFront(session)) {
-        return session.PickRequestAndReply();       
+        int ret = session.PickRequestAndReply(&RTSPServer::PlayCallBack, this); // 传入回调函数，保证他能在PLAY调用到RTSPServer::PlayCallBack
         // 一个客户端，可能会发多次命令，所以返回0，再次调用方法，直到Recv范围负数。
+        return ret;
+    }
+    return -1;
+}
+
+
+void RTSPServer::PlayCallBack(RTSPServer* thiz, RTSPSession& session)
+{
+    // 获取客户端udp地址
+    MAddress client = session.GetClientUDPAddress();
+    // 线程池，把UDP发送的线程，放到线程池中。
+    int ret = thiz->m_threadPool.DispatchWorker(ThreadWorker(thiz, (FUNCTYPE_ARG)&RTSPServer::UdpWorker, (void*)&client));
+    TRACE("%s %s(%d) ThreadPool ID = %d  (UDP发送的线程)", __FILE__, __FUNCTION__, __LINE__, ret);
+}
+
+// 发送文件。
+int RTSPServer::UdpWorker(const MAddress& client)
+{
+    MBuffer frame = m_h264.ReadOneFrame();
+    RTPFrame rtp;
+    while (frame.size() > 0) {
+        frame = m_h264.ReadOneFrame();
+        m_hleper.SendMediaFrame(rtp, frame, client);
     }
     return -1;
 }
@@ -106,7 +129,7 @@ MBuffer RTSPSession::PinkOneLine(MBuffer& buffer)
     return result;
 }
 
-int RTSPSession::PickRequestAndReply()
+int RTSPSession::PickRequestAndReply(RTSPPLAYCB cb, RTSPServer* thiz)
 {
     int ret = -1;
 
@@ -126,11 +149,27 @@ int RTSPSession::PickRequestAndReply()
         RTSPReply reply = Reply(request);
         ret = m_client.Send(reply.ToBuffer());
 
+        // 客户端的端口
+        m_port = (short)atoi(request.port());
+
+        if (request.method() == 3) {
+            // 回调
+            cb(thiz, *this);
+        }
     } while (ret >= 0);
    
     if (ret < 0) return ret;
 
     return 0;
+}
+
+MAddress RTSPSession::GetClientUDPAddress() const
+{
+    MAddress addr;
+    int len = 0;
+    getsockname(m_client, addr, &len);  //获取客户端地址
+    addr.SetPort(m_port);               //设置客户端的udp端口。
+    return addr;
 }
 
 MBuffer RTSPSession::Pick()
@@ -232,7 +271,7 @@ RTSPReply RTSPSession::Reply(const RTSPRequest& request)
         sdp << "a=contol:*\r\n";
         sdp << "m=video 0 RTP/AVP 96\r\n";
         sdp << "a=rtpmap:96 H264/90000\r\n";
-        sdp << "a=framerate:25\r\n";
+        sdp << "a=framerate:24\r\n";
         sdp << "a=control:track0\r\n";
 
         reply.SetSdp(sdp);
