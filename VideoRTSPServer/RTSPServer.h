@@ -93,6 +93,10 @@ private:
 	MBuffer m_id;
 	MSocket m_client;
 	short m_port;		//客户端UDP端口设置。
+	
+public:
+	MAddress m_udpAddr;
+	HANDLE h_closeUdp;
 };
 
 
@@ -119,7 +123,7 @@ protected:
 	
 	static void PlayCallBack(RTSPServer* thiz, RTSPSession& session);
 
-	int UdpWorker(const MAddress& client);
+	int UdpWorker(const RTSPSession& session);
 
 private:
 	static SocketInit m_init;

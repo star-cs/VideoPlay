@@ -78,7 +78,8 @@ BOOL CVideoClientDlg::OnInitDialog()
 
 	m_controller->SetWnd(m_veido.GetSafeHwnd());
 
-	m_MediaUrl.SetWindowText(_T("rtsp://127.0.0.1"));
+	m_MediaUrl.SetWindowText(_T("rtsp://127.0.0.1:554"));
+	//m_MediaUrl.SetWindowText(_T("file:///E:\\Cpp_Projects\\VideoPlay\\VideoPlay\\test.mp4"));
 
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }

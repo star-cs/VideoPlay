@@ -51,8 +51,11 @@ int RTSPServer::ThreadSession()
 {
     RTSPSession session;        // 局部变量，函数结束后，自动析构。连接断开，client关闭。解决方法：PickRequestAndReply while循环处理
     if (m_lstSession.PopFront(session)) {
+        session.h_closeUdp = CreateEvent(NULL, TRUE, FALSE, NULL);
+
         int ret = session.PickRequestAndReply(&RTSPServer::PlayCallBack, this); // 传入回调函数，保证他能在PLAY调用到RTSPServer::PlayCallBack
         // 一个客户端，可能会发多次命令，所以返回0，再次调用方法，直到Recv范围负数。
+        CloseHandle(session.h_closeUdp);
         return ret;
     }
     return -1;
@@ -61,23 +64,30 @@ int RTSPServer::ThreadSession()
 
 void RTSPServer::PlayCallBack(RTSPServer* thiz, RTSPSession& session)
 {
-    MAddress* client = new MAddress(session.GetClientUDPAddress());
-    int ret = thiz->m_threadPool.DispatchWorker(ThreadWorker(thiz, (FUNCTYPE_ARG)&RTSPServer::UdpWorker,(void*)client));
-    if (ret < 0) delete client;
+    MAddress client = session.GetClientUDPAddress();
+    session.m_udpAddr = client;
+    int ret = thiz->m_threadPool.DispatchWorker(ThreadWorker(thiz, (FUNCTYPE_ARG)&RTSPServer::UdpWorker,(void*)&session));
+
+    /*thiz->UdpWorker(session.GetClientUDPAddress());*/
 }
 
 // 发送文件。
-int RTSPServer::UdpWorker(const MAddress& client)
+// h_closeUdp 放到 RTSPSession里管理。
+// rtp发送数据的时候，h_closeUdp和session里的MSocket m_client生命周期类似，切有一定的对应关系（这里假定，一个客户端只会请求一个流，用一个事件管理）。
+int RTSPServer::UdpWorker(const RTSPSession& session)
 {
+    MAddress client = session.m_udpAddr;
     MBuffer frame = m_h264.ReadOneFrame();
     RTPFrame rtp;
     while (frame.size() > 0) {
          //  TODO: 设定一个结束发送帧的事件。
-
+        printf("UdpWorker %p %d\r\n", &session, session.h_closeUdp);
+        if (session.h_closeUdp == INVALID_HANDLE_VALUE || (WaitForSingleObject(session.h_closeUdp, 1) == WAIT_OBJECT_0)) {
+            break;
+        }
         m_hleper.SendMediaFrame(rtp, frame, client);
         frame = m_h264.ReadOneFrame();
     }
-    delete client;
     m_h264.Reset();
     return -1;
 }
@@ -167,6 +177,11 @@ int RTSPSession::PickRequestAndReply(RTSPPLAYCB cb, RTSPServer* thiz)
             // 回调
             cb(thiz, *this);
         }
+
+        if (request.method() == 4) {                // TEARDOWN
+            SetEvent(h_closeUdp);
+            printf("PickRequestAndReply TEARDOWN %p %d\r\n", this, h_closeUdp);
+        }
     } while (ret >= 0);
    
     if (ret < 0) return ret;
@@ -211,7 +226,7 @@ RTSPRequest RTSPSession::AnalyseRequest(const MBuffer& buffer)
     // TODO：字符串解析
     RTSPRequest request;
 
-    printf("AnalyseRequest:%s\r\n", (char*)buffer);
+    printf("%s\r\n", (char*)buffer);
     if (buffer.size() <= 0) return request;
     
     MBuffer data = buffer;
@@ -448,7 +463,7 @@ MBuffer RTSPReply::ToBuffer()
         reply << "Content-Base: 127.0.0.1" << "\r\n";
         reply << "Content-Type: application/sdp\r\n";
         reply << "Content-Length: " << m_sdp.size() << "\r\n\r\n";      // 这里拼接的sdp，一定要多添加一个\r\n
-        reply << m_sdp << "\r\n";
+        reply << m_sdp;                                                 // 这里不用\r\n
         break;
 
     case 2:     // SETUP

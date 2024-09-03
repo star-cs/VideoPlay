@@ -80,5 +80,16 @@ MAddress RTSPSession::GetClientUDPAddress() const
 > addrlen：指向 socklen_t 类型变量的指针，该变量用于指定 addr 结构体的大小，并且在调用后会被更新为实际使用的大小。  
 
 
-# DESCRIBE
+# DESCRIB响应 格式问题!!!!!
 服务器回应 DESCRIBE消息中，拼接的sdp前面，一定要多添加一个\r\n。
+sdp结尾不需要多一个\r\n
+```c++
+case 1:     // DESCRIBE
+        reply << "Content-Base: 127.0.0.1" << "\r\n";
+        reply << "Content-Type: application/sdp\r\n";
+        reply << "Content-Length: " << m_sdp.size() << "\r\n\r\n";      // 这里拼接的sdp，一定要多添加一个\r\n                    这里错了，官方的VLC客户端用不了
+        reply << m_sdp;                                                 // m_sdp里面已经有一个\r\n换行，这里不用再加一个\r\n。     这里错了，自己的VLC客户端用不了
+        break;
+```
+
+出现问题，对照正确的程序比较输入的行号。 :)  
