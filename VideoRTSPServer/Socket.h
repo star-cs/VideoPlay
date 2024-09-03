@@ -88,10 +88,13 @@ public:
 		m_addr.sin_addr.s_addr = inet_addr(m_ip.c_str());
 	}
 
-	void SetPort(short port) {
+	void setPort(short port) {
 		m_port = port;
 		m_addr.sin_port = htons(m_port);
 	}
+
+	const std::string Ip() const { return m_ip; }
+	unsigned short Port() const { return m_port; }
 
 	operator const sockaddr* () const{
 		return (sockaddr*)&m_addr;
@@ -107,9 +110,13 @@ public:
 
 	int size() const { return sizeof(sockaddr_in); }
 
+	void Fresh() {
+		m_ip = inet_ntoa(m_addr.sin_addr);
+	}
+
 private:
 	std::string m_ip;
-	short m_port;
+	unsigned short m_port;
 	sockaddr_in m_addr;
 };
 
@@ -156,7 +163,7 @@ public:
 	}
 
 	MSocket Accept(MAddress& addr) {		// 存在 socket先关闭，但处理Accept的线程还没关闭。 把Stop() 关闭顺序 改一下就行
-		int len = sizeof(addr);
+		int len = addr.size();
 		if (m_socket == nullptr) {
 			return MSocket(INVALID_SOCKET, m_type);
 		}

@@ -1,5 +1,6 @@
 #include "RTSPServer.h"
 #include <rpc.h>
+
 #pragma comment(lib, "rpcrt4.lib")
 
 SocketInit RTSPServer::m_init;
@@ -22,9 +23,10 @@ int RTSPServer::Invoke()
 // 存在 socket先关闭，但处理Accept的线程还没关闭。 把Stop() 关闭顺序 改一下就行。
 void RTSPServer::Stop()
 {
+    m_socket.Close();
     m_threadMain.Stop();
     m_threadPool.Stop();
-    m_socket.Close();
+    
 }
 
 RTSPServer::~RTSPServer()
@@ -59,11 +61,9 @@ int RTSPServer::ThreadSession()
 
 void RTSPServer::PlayCallBack(RTSPServer* thiz, RTSPSession& session)
 {
-    // 获取客户端udp地址
-    MAddress client = session.GetClientUDPAddress();
-    // 线程池，把UDP发送的线程，放到线程池中。
-    int ret = thiz->m_threadPool.DispatchWorker(ThreadWorker(thiz, (FUNCTYPE_ARG)&RTSPServer::UdpWorker, (void*)&client));
-    TRACE("%s %s(%d) ThreadPool ID = %d  (UDP发送的线程)", __FILE__, __FUNCTION__, __LINE__, ret);
+    MAddress* client = new MAddress(session.GetClientUDPAddress());
+    int ret = thiz->m_threadPool.DispatchWorker(ThreadWorker(thiz, (FUNCTYPE_ARG)&RTSPServer::UdpWorker,(void*)client));
+    if (ret < 0) delete client;
 }
 
 // 发送文件。
@@ -72,15 +72,20 @@ int RTSPServer::UdpWorker(const MAddress& client)
     MBuffer frame = m_h264.ReadOneFrame();
     RTPFrame rtp;
     while (frame.size() > 0) {
-        frame = m_h264.ReadOneFrame();
+         //  TODO: 设定一个结束发送帧的事件。
+
         m_hleper.SendMediaFrame(rtp, frame, client);
+        frame = m_h264.ReadOneFrame();
     }
+    delete client;
+    m_h264.Reset();
     return -1;
 }
 
-
 RTSPSession::RTSPSession()
 {
+    m_port = -1;
+
     UUID uuid;
     UuidCreate(&uuid);
 
@@ -97,12 +102,15 @@ RTSPSession::RTSPSession(const MSocket& client)
 
     m_id.resize(8);
     snprintf((char*)m_id.c_str(), m_id.size(), "%u%u", uuid.Data1, uuid.Data2);
+
+    m_port = -1;
 }
 
 RTSPSession::RTSPSession(const RTSPSession& session)
 {
     m_id = session.m_id;
     m_client = session.m_client;
+    m_port = session.m_port;
 }
 
 RTSPSession& RTSPSession::operator=(const RTSPSession& session)
@@ -110,6 +118,7 @@ RTSPSession& RTSPSession::operator=(const RTSPSession& session)
     if (this != &session) {
         m_id = session.m_id;
         m_client = session.m_client;
+        m_port = session.m_port;
     }
     return *this;
 }
@@ -150,9 +159,11 @@ int RTSPSession::PickRequestAndReply(RTSPPLAYCB cb, RTSPServer* thiz)
         ret = m_client.Send(reply.ToBuffer());
 
         // 客户端的端口
-        m_port = (short)atoi(request.port());
+        if (request.method() == 2) {                // SETUP
+            m_port = (short)atoi(request.port());
+        }
 
-        if (request.method() == 3) {
+        if (request.method() == 3) {                // PLAY
             // 回调
             cb(thiz, *this);
         }
@@ -166,11 +177,15 @@ int RTSPSession::PickRequestAndReply(RTSPPLAYCB cb, RTSPServer* thiz)
 MAddress RTSPSession::GetClientUDPAddress() const
 {
     MAddress addr;
-    int len = 0;
+    int len = addr.size();
     getsockname(m_client, addr, &len);  //获取客户端地址
-    addr.SetPort(m_port);               //设置客户端的udp端口。
+    addr.Fresh();
+    addr.setPort(m_port);               //设置客户端的udp端口。
     return addr;
 }
+
+
+
 
 MBuffer RTSPSession::Pick()
 {
@@ -221,9 +236,13 @@ RTSPRequest RTSPSession::AnalyseRequest(const MBuffer& buffer)
         return request;
     }
     else if (strcmp(method, "SETUP") == 0) {        // client_port
-        line = PinkOneLine(data);
+        do {
+            line = PinkOneLine(data);
+            if (strstr((const char*)line, "client_port=") == NULL) continue;
+            break;
+        } while (line.size() > 0);
         int ports[2] = { 0,0 };
-        if (sscanf(line, "Transport: RTP/AVP;unicast;client_port=%d-%d\r\n", &ports[0], &ports[1]) == 2) {
+        if (sscanf(line, "Transport: RTP/AVP;unicast;client_port=%d-%d\r\n", ports, ports + 1) == 2) {
             request.SetClientPorts(ports);
             return request;
         }
@@ -256,7 +275,7 @@ RTSPReply RTSPSession::Reply(const RTSPRequest& request)
     switch (request.method())
     {
     case 0:     // OPTIONS
-        reply.SetOptions("Public: OPTIONS DESCRIBE SETUP PLAY TEARDOWN\r\n");
+        reply.SetOptions("Public: OPTIONS, DESCRIBE, SETUP, PLAY, TEARDOWN\r\n");
         break;
 
     case 1:     // DESCRIBE
@@ -266,13 +285,10 @@ RTSPReply RTSPSession::Reply(const RTSPRequest& request)
        
         // MBuffer重载<<运算符 
         sdp << "v=0\r\n";
-        sdp << "0=- " << (char*)m_id << " 1 in IP4 127.0.0.1\r\n";
-        sdp << "t=0 0\r\n";
-        sdp << "a=contol:*\r\n";
-        sdp << "m=video 0 RTP/AVP 96\r\n";
-        sdp << "a=rtpmap:96 H264/90000\r\n";
+        sdp << "o=- " << (char*)m_id << " 1 IN IP4 127.0.0.1\r\n";
+        sdp << "t=0 0\r\n" << "a=control:*\r\n" << "m=video 0 RTP/AVP 96\r\n";
         sdp << "a=framerate:24\r\n";
-        sdp << "a=control:track0\r\n";
+        sdp << "a=rtpmap:96 H264/90000\r\n" << "a=control:track0\r\n";
 
         reply.SetSdp(sdp);
     } 
@@ -282,7 +298,7 @@ RTSPReply RTSPSession::Reply(const RTSPRequest& request)
         // Transport: RTP/AVP;unicast;client_port=54492-54493;server_port=55000-55001\r\n
         reply.SetClientPort(request.port(0), request.port(1));
         reply.SetServerPort("55000", "55001");
-        
+        reply.SetSession(m_id);
         break;
 
     case 3:     // PLAY
@@ -320,7 +336,7 @@ RTSPRequest& RTSPRequest::operator=(const RTSPRequest& protocol)
     return *this;
 }
 
-void RTSPRequest::SetMethod(MBuffer method)
+void RTSPRequest::SetMethod(const MBuffer& method)
 {
     if (strcmp(method, "OPTIONS") == 0) m_method = 0;
     else if (strcmp(method, "DESCRIBE") == 0) m_method = 1;
@@ -431,7 +447,7 @@ MBuffer RTSPReply::ToBuffer()
     case 1:     // DESCRIBE
         reply << "Content-Base: 127.0.0.1" << "\r\n";
         reply << "Content-Type: application/sdp\r\n";
-        reply << "Content-Length: " << m_sdp.size() << "\r\n";
+        reply << "Content-Length: " << m_sdp.size() << "\r\n\r\n";      // 这里拼接的sdp，一定要多添加一个\r\n
         reply << m_sdp << "\r\n";
         break;
 

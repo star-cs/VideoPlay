@@ -57,14 +57,15 @@ void MediaFile::Reset()
 MBuffer MediaFile::ReadH264Frame()
 {
 	if (m_file) {
-		long off = FindH264Header();
+		int headSize = 0;
+		long off = FindH264Header(headSize);			
 		if(off == -1) return MBuffer();
-		fseek(m_file, off + 3, SEEK_SET);	// 跳过00 ，接下来找 尾部。
-		long tail = FindH264Header();
+		fseek(m_file, off + headSize, SEEK_SET);	// 跳过00 00 00 01，接下来找 尾部。
+		long tail = FindH264Header(headSize);
 		if (tail == -1) {	// 下一个头部没找到，说明是文件尾部。
 			tail = m_size;
 		}
-		long size = tail - off;
+		long size = tail - 1 - off;
 		
 		fseek(m_file, off, SEEK_SET);
 		MBuffer result(size);
@@ -75,15 +76,20 @@ MBuffer MediaFile::ReadH264Frame()
 	return MBuffer();
 }
 
-int MediaFile::FindH264Header()
+// 结束时，m_file指向每一帧的开头 00 00 00 01 或 00 00 01 的第一个00位置。
+long MediaFile::FindH264Header(int& headSize)
 {
 	 while (!feof(m_file)) {
 		char buf[4];
 		fread(buf, 1, 4, m_file);
 		if (buf[0] == 0x00 && buf[1] == 0x00 && buf[2] == 0x00 && buf[3] == 0x01) {
+			headSize = 4;
+			fseek(m_file, -3, SEEK_CUR);
 			return ftell(m_file);
 		}
 		else if (buf[0] == 0x00 && buf[1] == 0x00 && buf[2] == 0x01) {
+			headSize = 3;
+			fseek(m_file, -3, SEEK_CUR);
 			return ftell(m_file);
 		}
 		fseek(m_file, -3, SEEK_CUR);

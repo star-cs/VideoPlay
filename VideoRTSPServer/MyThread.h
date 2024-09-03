@@ -10,7 +10,6 @@
 #define TRACE CTool::MTrace
 #endif
 
-
 class ThreadFuncBase {};
 
 typedef int(ThreadFuncBase::* FUNCTYPE)();
@@ -32,12 +31,18 @@ public:
 	ThreadWorker(const ThreadWorker& worker) {
 		thiz = worker.thiz;
 		func = worker.func;
+		func_arg = worker.func_arg;
+		m_arg = worker.m_arg;
+		hasArg = worker.hasArg;
 	}
 
 	ThreadWorker& operator=(const ThreadWorker& worker) {
 		if (this != &worker) {
 			thiz = worker.thiz;
 			func = worker.func;
+			func_arg = worker.func_arg;
+			m_arg = worker.m_arg;
+			hasArg = worker.hasArg;
 		}
 		return *this;
 	}

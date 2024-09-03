@@ -29,7 +29,7 @@ private:
 	MBuffer ReadH264Frame();
 
 	// ∑µªÿ-1≤È’“ ß∞‹°£
-	int FindH264Header();
+	long FindH264Header(int& headSize);
 
 private:
 	long m_size;

@@ -48,8 +48,11 @@ class RTPHelper
 public:
 	RTPHelper() :timestamp(0), m_socket(MUDP) {
 		m_socket.Bind(MAddress("0.0.0.0", (short)55000));	// °ó¶¨¶Ë¿Ú
+		m_file = fopen("./out.bin", "wb+");
 	}
-	~RTPHelper() {}
+	~RTPHelper() {
+		fclose(m_file);
+	}
 
 	int SendMediaFrame(RTPFrame& rtpFrame, MBuffer& frame, const MAddress& addr);
 	
@@ -59,5 +62,8 @@ private:
 	int SendFrame(const MBuffer& frame, const MAddress& addr);
 	DWORD timestamp = 0;
 	MSocket m_socket;
+
+
+	FILE* m_file;
 };
 

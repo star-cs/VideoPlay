@@ -17,7 +17,7 @@ public:
 	RTSPRequest& operator=(const RTSPRequest& protocol);
 	~RTSPRequest() { m_method = -1; }
 
-	void SetMethod(MBuffer method);
+	void SetMethod(const MBuffer& method);
 	void SetUrl(MBuffer url);
 	void SetSession(MBuffer session);
 	void SetSequence(MBuffer seq);
@@ -83,6 +83,7 @@ public:
 
 	~RTSPSession() {}
 
+
 private:
 	MBuffer Pick();
 	RTSPRequest AnalyseRequest(const MBuffer& buffer);
@@ -102,7 +103,7 @@ public:
 		:m_socket(MTYPE::MTCP), m_status(0), m_threadPool(10)
 	{
 		m_threadMain.UpdateWorker(ThreadWorker(this, (FUNCTYPE)&RTSPServer::ThreadRTSPWorker));
-		m_h264.Open("./test.mp4");
+		m_h264.Open("./test.h264");
 	}
 
 	int Init(const std::string& strIP = "0.0.0.0", short port = 554);
@@ -124,7 +125,7 @@ private:
 	static SocketInit m_init;
 
 	MSocket m_socket;
-	MAddress m_addr;
+	MAddress m_addr;	// 服务器地址
 
 	int m_status;		// 0 未初始化   1 初始化完成   2 正在运行  3 关闭
 

@@ -65,8 +65,20 @@ DataSheet中，默认左边是高位，低位在右边
 MAddress RTSPSession::GetClientUDPAddress() const
 {
     MAddress addr;
-    int len = 0;
+    int len = addr.size();
     getsockname(m_client, addr, &len);  //获取客户端地址
+    addr.Fresh();
+    addr.setPort(m_port);               //设置客户端的udp端口。
     return addr;
 }
 ```
+
+> #include <sys/socket.h>  
+> int getsockname(int sockfd, struct sockaddr *addr, socklen_t *addrlen);  
+> sockfd：这是套接字描述符，标识一个打开的套接字。  
+> addr：指向 struct sockaddr 类型结构体的指针，该结构体用于存储本地地址信息。  
+> addrlen：指向 socklen_t 类型变量的指针，该变量用于指定 addr 结构体的大小，并且在调用后会被更新为实际使用的大小。  
+
+
+# DESCRIBE
+服务器回应 DESCRIBE消息中，拼接的sdp前面，一定要多添加一个\r\n。
