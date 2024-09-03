@@ -361,3 +361,5 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/VideoRTSPServer/out.bin
+/VideoRTSPServer/test.h264
